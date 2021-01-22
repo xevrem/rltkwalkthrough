@@ -2,6 +2,10 @@ use rltk::{GameState, Rltk, VirtualKeyCode, RGB};
 use specs::prelude::*;
 use specs_derive::Component;
 use std::cmp::{max, min};
+mod map;
+pub use map::*;
+mod rect;
+pub use rect::Rect;
 
 #[derive(Component)]
 struct Position {
@@ -57,52 +61,24 @@ fn player_input(gs: &mut State, ctx: &mut Rltk) {
   match ctx.key {
     None => {} // nothing happened
     Some(key) => match key {
-      VirtualKeyCode::Left => try_move_player(-1, 0, &mut gs.ecs),
-      VirtualKeyCode::Right => try_move_player(1, 0, &mut gs.ecs),
-      VirtualKeyCode::Up => try_move_player(0, -1, &mut gs.ecs),
-      VirtualKeyCode::Down => try_move_player(0, 1, &mut gs.ecs),
+      VirtualKeyCode::Left | VirtualKeyCode::Numpad4 | VirtualKeyCode::H => {
+        try_move_player(-1, 0, &mut gs.ecs)
+      }
+
+      VirtualKeyCode::Right | VirtualKeyCode::Numpad6 | VirtualKeyCode::L => {
+        try_move_player(1, 0, &mut gs.ecs)
+      }
+
+      VirtualKeyCode::Up | VirtualKeyCode::Numpad8 | VirtualKeyCode::K => {
+        try_move_player(0, -1, &mut gs.ecs)
+      }
+
+      VirtualKeyCode::Down | VirtualKeyCode::Numpad2 | VirtualKeyCode::J => {
+        try_move_player(0, 1, &mut gs.ecs)
+      }
       _ => {}
     },
   }
-}
-
-#[derive(PartialEq, Copy, Clone)]
-enum TileType {
-  Wall,
-  Floor,
-}
-
-pub fn xy_idx(x: i32, y: i32) -> usize {
-  (y as usize * 80) + x as usize
-}
-
-fn new_map() -> Vec<TileType> {
-  let mut map = vec![TileType::Floor; 80 * 50];
-
-  // make the boundary walls
-  for x in 0..80 {
-    map[xy_idx(x, 0)] = TileType::Wall;
-    map[xy_idx(x, 49)] = TileType::Wall;
-  }
-
-  for y in 0..50 {
-    map[xy_idx(0, y)] = TileType::Wall;
-    map[xy_idx(79, y)] = TileType::Wall;
-  }
-
-  // we'll randomly splat walls
-  let mut rng = rltk::RandomNumberGenerator::new();
-
-  for _ in 0..400 {
-    let x = rng.roll_dice(1, 79);
-    let y = rng.roll_dice(1, 49);
-    let idx = xy_idx(x, y);
-    if idx != xy_idx(40, 25) {
-      map[idx] = TileType::Wall;
-    }
-  }
-
-  map
 }
 
 fn draw_map(map: &[TileType], ctx: &mut Rltk) {
@@ -181,11 +157,16 @@ fn main() -> rltk::BError {
   gs.ecs.register::<LeftMover>();
   gs.ecs.register::<Player>();
 
-  gs.ecs.insert(new_map());
+  let (rooms, map) = new_map_rooms_and_corridors();
+  gs.ecs.insert(map);
+  let (player_x, player_y) = rooms[0].center();
 
   gs.ecs
     .create_entity()
-    .with(Position { x: 40, y: 25 })
+    .with(Position {
+      x: player_x,
+      y: player_y,
+    })
     .with(Renderable {
       glyph: rltk::to_cp437('@'),
       fg: RGB::named(rltk::YELLOW),
