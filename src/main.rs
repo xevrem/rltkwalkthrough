@@ -8,6 +8,8 @@ mod rect;
 pub use rect::Rect;
 mod components;
 pub use components::*;
+mod visibility_system;
+pub use visibility_system::VisibilitySystem;
 
 pub struct State {
   ecs: World,
@@ -15,8 +17,8 @@ pub struct State {
 
 impl State {
   fn run_systems(&mut self) {
-    // let mut lw = LeftWalker {};
-    // lw.run_now(&self.ecs);
+    let mut vis = VisibilitySystem {};
+    vis.run_now(&self.ecs);
     self.ecs.maintain();
   }
 }
@@ -47,8 +49,8 @@ fn main() -> rltk::BError {
   let mut gs = State { ecs: World::new() };
   gs.ecs.register::<Position>();
   gs.ecs.register::<Renderable>();
-  // gs.ecs.register::<LeftMover>();
   gs.ecs.register::<Player>();
+  gs.ecs.register::<Viewshed>();
 
   let map: Map = Map::new_map_rooms_and_corridors();
   let (player_x, player_y) = map.rooms[0].center();
@@ -66,6 +68,10 @@ fn main() -> rltk::BError {
       bg: RGB::named(rltk::BLACK),
     })
     .with(Player {})
+    .with(Viewshed {
+      visible_tiles: Vec::new(),
+      range: 8,
+    })
     .build();
 
   rltk::main_loop(context, gs)
