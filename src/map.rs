@@ -1,5 +1,4 @@
-use rltk::RandomNumberGenerator;
-
+use rltk::{RandomNumberGenerator, RGB, Rltk};
 use super::Rect;
 use std::cmp::{max, min};
 
@@ -96,5 +95,40 @@ impl Map {
     }
 
     map
+  }
+}
+
+pub fn draw_map(map: &Map, ctx: &mut Rltk) {
+  let mut y = 0;
+  let mut x = 0;
+
+  for tile in map.tiles.iter() {
+    // render at tile based on type
+    match tile {
+      TileType::Floor => {
+        ctx.set(
+          x,
+          y,
+          RGB::from_f32(0.5, 0.5, 0.5),
+          RGB::from_f32(0., 0., 0.),
+          rltk::to_cp437('.'),
+        );
+      }
+      TileType::Wall => {
+        ctx.set(
+          x,
+          y,
+          RGB::from_f32(0.0, 1.0, 0.0),
+          RGB::from_f32(0., 0., 0.),
+          rltk::to_cp437('#'),
+        );
+      }
+    }
+    // move the coordinates
+    x += 1;
+    if x > 79 {
+      x = 0;
+      y += 1;
+    }
   }
 }
