@@ -126,7 +126,7 @@ pub fn draw_map(ecs: &World, ctx: &mut Rltk) {
     // render at tile based on type
     if map.revealed_tiles[idx] {
       let (glyph, mut fg) = match tile {
-        TileType::Floor => (rltk::to_cp437('.'), RGB::from_f32(0.5, 0.5, 0.5)),
+        TileType::Floor => (rltk::to_cp437('.'), RGB::from_f32(0.0, 0.5, 0.5)),
         TileType::Wall => (rltk::to_cp437('#'), RGB::from_f32(0.0, 1.0, 0.0)),
       };
       if !map.visible_tiles[idx] { fg = fg.to_greyscale(); }
