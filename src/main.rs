@@ -1,4 +1,4 @@
-use rltk::{GameState, Rltk, RGB};
+use rltk::{GameState, Point, Rltk, RGB};
 use specs::prelude::*;
 mod map;
 mod player;
@@ -10,14 +10,25 @@ mod components;
 pub use components::*;
 mod visibility_system;
 pub use visibility_system::VisibilitySystem;
+mod monster_ai_system;
+pub use monster_ai_system::MonsterAI;
+
+#[derive(PartialEq, Copy, Clone)]
+pub enum RunState {
+  Paused,
+  Running,
+}
 
 pub struct State {
-  ecs: World,
+  pub ecs: World,
+  pub runstate: RunState,
 }
 
 impl State {
   fn run_systems(&mut self) {
     let mut vis = VisibilitySystem {};
+    vis.run_now(&self.ecs);
+    let mut vis = MonsterAI {};
     vis.run_now(&self.ecs);
     self.ecs.maintain();
   }
@@ -27,10 +38,13 @@ impl GameState for State {
   fn tick(&mut self, ctx: &mut Rltk) {
     ctx.cls();
 
-    player_input(self, ctx);
-    self.run_systems();
+    if self.runstate == RunState::Running {
+      self.run_systems();
+      self.runstate = RunState::Paused;
+    } else {
+      self.runstate = player_input(self, ctx);
+    }
 
-    let map = self.ecs.fetch::<Map>(); //Vec<TileType>>();
     draw_map(&self.ecs, ctx);
 
     let positions = self.ecs.read_storage::<Position>();
@@ -50,10 +64,14 @@ fn main() -> rltk::BError {
   let context = rltk::RltkBuilder::simple80x50()
     .with_title("Roguelike Tutorial")
     .build()?;
-  let mut gs = State { ecs: World::new() };
+  let mut gs = State {
+    ecs: World::new(),
+    runstate: RunState::Running,
+  };
+  gs.ecs.register::<Monster>();
+  gs.ecs.register::<Player>();
   gs.ecs.register::<Position>();
   gs.ecs.register::<Renderable>();
-  gs.ecs.register::<Player>();
   gs.ecs.register::<Viewshed>();
 
   let map: Map = Map::new_map_rooms_and_corridors();
@@ -74,9 +92,11 @@ fn main() -> rltk::BError {
         range: 8,
         dirty: true,
       })
+      .with(Monster {})
       .build();
   }
 
+  gs.ecs.insert(Point::new(player_x, player_y));
   gs.ecs.insert(map);
 
   gs.ecs

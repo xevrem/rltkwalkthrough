@@ -5,6 +5,9 @@ use specs_derive::*;
 #[derive(Component)]
 pub struct LeftMover {}
 
+#[derive(Component)]
+pub struct Monster {}
+
 #[derive(Component, Debug)]
 pub struct Player {}
 
