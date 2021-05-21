@@ -2,8 +2,10 @@ use rltk::RGB;
 use specs::prelude::*;
 use specs_derive::*;
 
-#[derive(Component)]
-pub struct LeftMover {}
+#[derive(Component, Debug)]
+pub struct Name {
+  pub name: String
+}
 
 #[derive(Component)]
 pub struct Monster {}

@@ -68,6 +68,7 @@ fn main() -> rltk::BError {
     ecs: World::new(),
     runstate: RunState::Running,
   };
+  gs.ecs.register::<Name>();
   gs.ecs.register::<Monster>();
   gs.ecs.register::<Player>();
   gs.ecs.register::<Position>();
@@ -77,13 +78,21 @@ fn main() -> rltk::BError {
   let map: Map = Map::new_map_rooms_and_corridors();
   let (player_x, player_y) = map.rooms[0].center();
 
-  for room in map.rooms.iter().skip(1) {
+  let mut rng = rltk::RandomNumberGenerator::new();
+
+  for (i, room) in map.rooms.iter().skip(1).enumerate() {
     let (x, y) = room.center();
+
+    let roll = rng.roll_dice(1, 2);
+    let (glyph, name) = match roll {
+      1 => (rltk::to_cp437('g'), "Goblin".to_string()),
+      _ => (rltk::to_cp437('o'), "Orc".to_string()),
+    };
     gs.ecs
       .create_entity()
       .with(Position { x, y })
       .with(Renderable {
-        glyph: rltk::to_cp437('g'),
+        glyph,
         fg: RGB::named(rltk::RED),
         bg: RGB::named(rltk::BLACK),
       })
@@ -93,6 +102,7 @@ fn main() -> rltk::BError {
         dirty: true,
       })
       .with(Monster {})
+      .with(Name { name: format!("{} #{}", &name, i) })
       .build();
   }
 
@@ -115,6 +125,9 @@ fn main() -> rltk::BError {
       visible_tiles: Vec::new(),
       range: 8,
       dirty: true,
+    })
+    .with(Name {
+      name: "Player".to_string(),
     })
     .build();
 
