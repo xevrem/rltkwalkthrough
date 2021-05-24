@@ -22,7 +22,18 @@ impl<'a> System<'a> for MonsterAI {
       (&mut viewshed, &monster, &name, &mut position).join()
     {
       if viewshed.visible_tiles.contains(&*player_pos) {
+        console::log(&format!("{} shouts insults", name.name));
 
+        let path = rltk::a_star_search(
+          map.xy_idx(pos.x, pos.y) as i32,
+          map.xy_idx(player_pos.x, player_pos.y) as i32,
+          &mut *map,
+        );
+        if path.success && path.steps.len() > 1 {
+          pos.x = path.steps[1] as i32 % map.width;
+          pos.y = path.steps[1] as i32 / map.width;
+          viewshed.dirty = true;
+        }
       }
     }
   }
